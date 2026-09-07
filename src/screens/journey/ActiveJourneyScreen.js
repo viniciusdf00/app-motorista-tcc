@@ -61,9 +61,8 @@ export default function ActiveJourneyScreen({
       return;
     }
 
-    const inicio = new Date(
-      jornada.inicio
-    );
+    const inicio =
+      new Date(jornada.inicio);
 
     const agora = new Date();
 
@@ -124,6 +123,20 @@ export default function ActiveJourneyScreen({
         Alert.alert(
           'Erro',
           'Não foi possível carregar a jornada.'
+        );
+
+        return;
+      }
+
+      if (
+        dadosJornada.status !==
+        'em_andamento'
+      ) {
+        navigation.replace(
+          'ResumoJornada',
+          {
+            jornadaId,
+          }
         );
 
         return;
@@ -267,10 +280,30 @@ export default function ActiveJourneyScreen({
       </View>
 
       <Text style={styles.aviso}>
-        A jornada continuará em
-        andamento mesmo se você voltar
-        para a tela inicial.
+        A jornada continuará em andamento
+        mesmo se você voltar para a tela
+        inicial.
       </Text>
+
+      <TouchableOpacity
+        style={styles.botaoFinalizar}
+        onPress={() =>
+          navigation.navigate(
+            'FinalizarJornada',
+            {
+              jornadaId,
+            }
+          )
+        }
+      >
+        <Text
+          style={
+            styles.textoFinalizar
+          }
+        >
+          Finalizar jornada
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.botaoVoltar}
@@ -282,18 +315,6 @@ export default function ActiveJourneyScreen({
           Voltar para a Home
         </Text>
       </TouchableOpacity>
-
-      <View style={styles.proximaEtapa}>
-        <Text style={styles.proximaTitulo}>
-          Finalizar jornada
-        </Text>
-
-        <Text style={styles.proximaTexto}>
-          Na próxima etapa vamos
-          registrar km final, quantidade
-          de corridas e valor recebido.
-        </Text>
-      </View>
     </View>
   );
 }
@@ -366,7 +387,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  botaoVoltar: {
+  botaoFinalizar: {
     backgroundColor: '#222222',
     padding: 16,
     borderRadius: 10,
@@ -374,27 +395,23 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
 
-  textoVoltar: {
+  textoFinalizar: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
     fontSize: 16,
+    fontWeight: 'bold',
   },
 
-  proximaEtapa: {
-    marginTop: 20,
+  botaoVoltar: {
     padding: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: '#CCCCCC',
+    alignItems: 'center',
+    marginTop: 12,
   },
 
-  proximaTitulo: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-
-  proximaTexto: {
-    fontSize: 13,
-    lineHeight: 18,
+  textoVoltar: {
+    fontWeight: '600',
+    fontSize: 15,
   },
 });

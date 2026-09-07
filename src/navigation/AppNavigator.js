@@ -12,8 +12,11 @@ import HomeScreen from '../screens/home/HomeScreen';
 
 import StartJourneyScreen from '../screens/journey/StartJourneyScreen';
 import ActiveJourneyScreen from '../screens/journey/ActiveJourneyScreen';
+import FinishJourneyScreen from '../screens/journey/FinishJourneyScreen';
+import JourneySummaryScreen from '../screens/journey/JourneySummaryScreen';
 
-const Stack = createNativeStackNavigator();
+const Stack =
+  createNativeStackNavigator();
 
 export default function AppNavigator() {
   return (
@@ -39,7 +42,9 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="CadastroVeiculo"
-          component={VehicleRegisterScreen}
+          component={
+            VehicleRegisterScreen
+          }
           options={{
             title: 'Cadastrar veículo',
           }}
@@ -74,6 +79,23 @@ export default function AppNavigator() {
           component={ActiveJourneyScreen}
           options={{
             title: 'Jornada',
+            headerBackVisible: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="FinalizarJornada"
+          component={FinishJourneyScreen}
+          options={{
+            title: 'Finalizar jornada',
+          }}
+        />
+
+        <Stack.Screen
+          name="ResumoJornada"
+          component={JourneySummaryScreen}
+          options={{
+            title: 'Resumo da jornada',
             headerBackVisible: false,
           }}
         />
