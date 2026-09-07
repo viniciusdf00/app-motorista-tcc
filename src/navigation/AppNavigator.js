@@ -20,6 +20,10 @@ import ExpensesScreen from '../screens/expense/ExpensesScreen';
 import ExpenseRegisterScreen from '../screens/expense/ExpenseRegisterScreen';
 import ExpenseEditScreen from '../screens/expense/ExpenseEditScreen';
 
+import FuelingsScreen from '../screens/fueling/FuelingsScreen';
+import FuelingRegisterScreen from '../screens/fueling/FuelingRegisterScreen';
+import FuelingEditScreen from '../screens/fueling/FuelingEditScreen';
+
 const Stack =
   createNativeStackNavigator();
 
@@ -154,6 +158,36 @@ export default function AppNavigator() {
           }
           options={{
             title: 'Editar despesa',
+          }}
+        />
+
+        <Stack.Screen
+          name="Abastecimentos"
+          component={
+            FuelingsScreen
+          }
+          options={{
+            title: 'Abastecimentos',
+          }}
+        />
+
+        <Stack.Screen
+          name="CadastrarAbastecimento"
+          component={
+            FuelingRegisterScreen
+          }
+          options={{
+            title: 'Novo abastecimento',
+          }}
+        />
+
+        <Stack.Screen
+          name="EditarAbastecimento"
+          component={
+            FuelingEditScreen
+          }
+          options={{
+            title: 'Editar abastecimento',
           }}
         />
 

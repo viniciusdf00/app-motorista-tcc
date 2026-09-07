@@ -1125,6 +1125,43 @@ export default function HomeScreen({
           →
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity
+  style={
+    styles.botaoSecundario
+  }
+  onPress={() =>
+    navigation.navigate(
+      'Abastecimentos'
+    )
+  }
+>
+  <View>
+    <Text
+      style={
+        styles.botaoSecundarioTitulo
+      }
+    >
+      Abastecimentos
+    </Text>
+
+    <Text
+      style={
+        styles.botaoSecundarioDescricao
+      }
+    >
+      Registre e acompanhe seus
+      gastos com combustível
+    </Text>
+  </View>
+
+  <Text
+    style={
+      styles.seta
+    }
+  >
+    →
+  </Text>
+</TouchableOpacity>
 
       <TouchableOpacity
         style={
