@@ -24,6 +24,10 @@ import FuelingsScreen from '../screens/fueling/FuelingsScreen';
 import FuelingRegisterScreen from '../screens/fueling/FuelingRegisterScreen';
 import FuelingEditScreen from '../screens/fueling/FuelingEditScreen';
 
+import MaintenanceScreen from '../screens/maintenance/MaintenanceScreen';
+import MaintenanceRegisterScreen from '../screens/maintenance/MaintenanceRegisterScreen';
+import MaintenanceEditScreen from '../screens/maintenance/MaintenanceEditScreen';
+
 const Stack =
   createNativeStackNavigator();
 
@@ -188,6 +192,36 @@ export default function AppNavigator() {
           }
           options={{
             title: 'Editar abastecimento',
+          }}
+        />
+
+        <Stack.Screen
+          name="Manutencoes"
+          component={
+            MaintenanceScreen
+          }
+          options={{
+            title: 'Manutenções',
+          }}
+        />
+
+        <Stack.Screen
+          name="CadastrarManutencao"
+          component={
+            MaintenanceRegisterScreen
+          }
+          options={{
+            title: 'Nova manutenção',
+          }}
+        />
+
+        <Stack.Screen
+          name="EditarManutencao"
+          component={
+            MaintenanceEditScreen
+          }
+          options={{
+            title: 'Editar manutenção',
           }}
         />
 

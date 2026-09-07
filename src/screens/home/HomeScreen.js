@@ -100,6 +100,9 @@ export default function HomeScreen({
         return;
       }
 
+      /*
+       * Nome do usuário
+       */
       const {
         data: usuario,
         error: erroUsuario,
@@ -121,6 +124,9 @@ export default function HomeScreen({
         );
       }
 
+      /*
+       * Jornada em andamento
+       */
       const {
         data: dadosJornadaAtiva,
         error: erroJornadaAtiva,
@@ -169,6 +175,10 @@ export default function HomeScreen({
         );
       }
 
+      /*
+       * Jornadas finalizadas
+       * do mês atual
+       */
       const agora =
         new Date();
 
@@ -268,6 +278,9 @@ export default function HomeScreen({
     return novaData;
   }
 
+  /*
+   * Filtra Hoje ou Mês
+   */
   const jornadasFiltradas =
     useMemo(() => {
       if (
@@ -301,6 +314,9 @@ export default function HomeScreen({
       filtro,
     ]);
 
+  /*
+   * Indicadores
+   */
   const indicadores =
     useMemo(() => {
       return jornadasFiltradas.reduce(
@@ -365,7 +381,8 @@ export default function HomeScreen({
           total.segundos +=
             segundos;
 
-          total.jornadas += 1;
+          total.jornadas +=
+            1;
 
           return total;
         },
@@ -576,12 +593,18 @@ export default function HomeScreen({
         />
       }
     >
+      {/* CABEÇALHO */}
+
       <View
         style={
           styles.cabecalho
         }
       >
-        <View>
+        <View
+          style={
+            styles.cabecalhoTexto
+          }
+        >
           <Text
             style={
               styles.titulo
@@ -605,7 +628,9 @@ export default function HomeScreen({
           style={
             styles.botaoSairTopo
           }
-          onPress={sair}
+          onPress={
+            sair
+          }
         >
           <Text
             style={
@@ -616,6 +641,8 @@ export default function HomeScreen({
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* JORNADA ATIVA */}
 
       {jornadaAtiva && (
         <TouchableOpacity
@@ -689,30 +716,24 @@ export default function HomeScreen({
         </TouchableOpacity>
       )}
 
-      <View
+      {/* DESEMPENHO */}
+
+      <Text
         style={
-          styles.tituloLinha
+          styles.secaoTitulo
         }
       >
-        <View>
-          <Text
-            style={
-              styles.secaoTitulo
-            }
-          >
-            Seu desempenho
-          </Text>
+        Seu desempenho
+      </Text>
 
-          <Text
-            style={
-              styles.secaoSubtitulo
-            }
-          >
-            Indicadores das jornadas
-            finalizadas
-          </Text>
-        </View>
-      </View>
+      <Text
+        style={
+          styles.secaoSubtitulo
+        }
+      >
+        Indicadores das jornadas
+        finalizadas
+      </Text>
 
       <View
         style={
@@ -756,6 +777,8 @@ export default function HomeScreen({
         )}
       </View>
 
+      {/* TOTAL RECEBIDO */}
+
       <View
         style={
           styles.cardDestaque
@@ -789,6 +812,8 @@ export default function HomeScreen({
             : 'Neste mês'}
         </Text>
       </View>
+
+      {/* INDICADORES */}
 
       <View
         style={
@@ -863,7 +888,8 @@ export default function HomeScreen({
           >
             {
               indicadores.km
-            } km
+            }{' '}
+            km
           </Text>
         </View>
 
@@ -967,8 +993,14 @@ export default function HomeScreen({
         </View>
       )}
 
+      {/* ÚLTIMA JORNADA */}
+
       {ultimaJornada && (
-        <View>
+        <View
+          style={
+            styles.blocoSecao
+          }
+        >
           <Text
             style={
               styles.secaoTitulo
@@ -1042,164 +1074,242 @@ export default function HomeScreen({
         </View>
       )}
 
-      <Text
+      {/* ACESSO RÁPIDO */}
+
+      <View
         style={
-          styles.secaoTitulo
+          styles.acessoRapido
         }
       >
-        Acesso rápido
-      </Text>
-
-      <TouchableOpacity
-        style={
-          styles.botaoSecundario
-        }
-        onPress={() =>
-          navigation.navigate(
-            'HistoricoJornadas'
-          )
-        }
-      >
-        <View>
-          <Text
-            style={
-              styles.botaoSecundarioTitulo
-            }
-          >
-            Histórico de jornadas
-          </Text>
-
-          <Text
-            style={
-              styles.botaoSecundarioDescricao
-            }
-          >
-            Consulte suas jornadas e
-            períodos anteriores
-          </Text>
-        </View>
-
         <Text
           style={
-            styles.seta
+            styles.secaoTitulo
           }
         >
-          →
+          Acesso rápido
         </Text>
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        style={
-          styles.botaoSecundario
-        }
-        onPress={() =>
-          navigation.navigate(
-            'Despesas'
-          )
-        }
-      >
-        <View>
-          <Text
-            style={
-              styles.botaoSecundarioTitulo
-            }
-          >
-            Despesas
-          </Text>
+        {/* HISTÓRICO */}
 
-          <Text
-            style={
-              styles.botaoSecundarioDescricao
-            }
-          >
-            Registre e acompanhe seus
-            gastos
-          </Text>
-        </View>
-
-        <Text
+        <TouchableOpacity
           style={
-            styles.seta
+            styles.botaoSecundario
+          }
+          onPress={() =>
+            navigation.navigate(
+              'HistoricoJornadas'
+            )
           }
         >
-          →
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-  style={
-    styles.botaoSecundario
-  }
-  onPress={() =>
-    navigation.navigate(
-      'Abastecimentos'
-    )
-  }
->
-  <View>
-    <Text
-      style={
-        styles.botaoSecundarioTitulo
-      }
-    >
-      Abastecimentos
-    </Text>
-
-    <Text
-      style={
-        styles.botaoSecundarioDescricao
-      }
-    >
-      Registre e acompanhe seus
-      gastos com combustível
-    </Text>
-  </View>
-
-  <Text
-    style={
-      styles.seta
-    }
-  >
-    →
-  </Text>
-</TouchableOpacity>
-
-      <TouchableOpacity
-        style={
-          styles.botaoSecundario
-        }
-        onPress={() =>
-          navigation.navigate(
-            'MeusVeiculos'
-          )
-        }
-      >
-        <View>
-          <Text
+          <View
             style={
-              styles.botaoSecundarioTitulo
+              styles.botaoConteudo
             }
           >
-            Meus veículos
-          </Text>
+            <Text
+              style={
+                styles.botaoSecundarioTitulo
+              }
+            >
+              Histórico de jornadas
+            </Text>
+
+            <Text
+              style={
+                styles.botaoSecundarioDescricao
+              }
+            >
+              Consulte suas jornadas e
+              períodos anteriores
+            </Text>
+          </View>
 
           <Text
             style={
-              styles.botaoSecundarioDescricao
+              styles.seta
             }
           >
-            Cadastre e gerencie seus
-            veículos
+            →
           </Text>
-        </View>
+        </TouchableOpacity>
 
-        <Text
+        {/* DESPESAS */}
+
+        <TouchableOpacity
           style={
-            styles.seta
+            styles.botaoSecundario
+          }
+          onPress={() =>
+            navigation.navigate(
+              'Despesas'
+            )
           }
         >
-          →
-        </Text>
-      </TouchableOpacity>
+          <View
+            style={
+              styles.botaoConteudo
+            }
+          >
+            <Text
+              style={
+                styles.botaoSecundarioTitulo
+              }
+            >
+              Despesas
+            </Text>
+
+            <Text
+              style={
+                styles.botaoSecundarioDescricao
+              }
+            >
+              Registre e acompanhe seus
+              gastos
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.seta
+            }
+          >
+            →
+          </Text>
+        </TouchableOpacity>
+
+        {/* ABASTECIMENTOS */}
+
+        <TouchableOpacity
+          style={
+            styles.botaoSecundario
+          }
+          onPress={() =>
+            navigation.navigate(
+              'Abastecimentos'
+            )
+          }
+        >
+          <View
+            style={
+              styles.botaoConteudo
+            }
+          >
+            <Text
+              style={
+                styles.botaoSecundarioTitulo
+              }
+            >
+              Abastecimentos
+            </Text>
+
+            <Text
+              style={
+                styles.botaoSecundarioDescricao
+              }
+            >
+              Registre e acompanhe seus
+              gastos com combustível
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.seta
+            }
+          >
+            →
+          </Text>
+        </TouchableOpacity>
+
+        {/* MANUTENÇÕES */}
+
+        <TouchableOpacity
+          style={
+            styles.botaoSecundario
+          }
+          onPress={() =>
+            navigation.navigate(
+              'Manutencoes'
+            )
+          }
+        >
+          <View
+            style={
+              styles.botaoConteudo
+            }
+          >
+            <Text
+              style={
+                styles.botaoSecundarioTitulo
+              }
+            >
+              Manutenções
+            </Text>
+
+            <Text
+              style={
+                styles.botaoSecundarioDescricao
+              }
+            >
+              Registre serviços e
+              acompanhe próximas
+              manutenções
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.seta
+            }
+          >
+            →
+          </Text>
+        </TouchableOpacity>
+
+        {/* VEÍCULOS */}
+
+        <TouchableOpacity
+          style={
+            styles.botaoSecundario
+          }
+          onPress={() =>
+            navigation.navigate(
+              'MeusVeiculos'
+            )
+          }
+        >
+          <View
+            style={
+              styles.botaoConteudo
+            }
+          >
+            <Text
+              style={
+                styles.botaoSecundarioTitulo
+              }
+            >
+              Meus veículos
+            </Text>
+
+            <Text
+              style={
+                styles.botaoSecundarioDescricao
+              }
+            >
+              Cadastre e gerencie seus
+              veículos
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.seta
+            }
+          >
+            →
+          </Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -1215,7 +1325,7 @@ const styles =
     conteudo: {
       padding: 20,
       paddingTop: 55,
-      paddingBottom: 45,
+      paddingBottom: 50,
     },
 
     centralizado: {
@@ -1239,6 +1349,11 @@ const styles =
       alignItems:
         'flex-start',
       marginBottom: 22,
+    },
+
+    cabecalhoTexto: {
+      flex: 1,
+      paddingRight: 10,
     },
 
     titulo: {
@@ -1315,13 +1430,6 @@ const styles =
       color: '#FFFFFF',
       fontSize: 16,
       fontWeight: 'bold',
-    },
-
-    tituloLinha: {
-      flexDirection: 'row',
-      justifyContent:
-        'space-between',
-      alignItems: 'center',
     },
 
     secaoTitulo: {
@@ -1447,6 +1555,10 @@ const styles =
       lineHeight: 19,
     },
 
+    blocoSecao: {
+      marginBottom: 4,
+    },
+
     ultimaJornada: {
       backgroundColor:
         '#FFFFFF',
@@ -1487,7 +1599,12 @@ const styles =
       marginTop: 12,
     },
 
+    acessoRapido: {
+      width: '100%',
+    },
+
     botaoSecundario: {
+      width: '100%',
       flexDirection: 'row',
       justifyContent:
         'space-between',
@@ -1502,6 +1619,11 @@ const styles =
       marginTop: 10,
     },
 
+    botaoConteudo: {
+      flex: 1,
+      paddingRight: 15,
+    },
+
     botaoSecundarioTitulo: {
       fontSize: 16,
       fontWeight: 'bold',
@@ -1510,11 +1632,12 @@ const styles =
 
     botaoSecundarioDescricao: {
       fontSize: 12,
-      maxWidth: 260,
+      lineHeight: 17,
     },
 
     seta: {
       fontSize: 20,
       fontWeight: 'bold',
+      flexShrink: 0,
     },
   });
