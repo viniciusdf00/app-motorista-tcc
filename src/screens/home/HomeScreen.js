@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useMemo,
   useState,
 } from 'react';
 
@@ -10,6 +11,8 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  ScrollView,
+  RefreshControl,
 } from 'react-native';
 
 import {
@@ -17,6 +20,17 @@ import {
 } from '@react-navigation/native';
 
 import { supabase } from '../../services/supabase';
+
+const FILTROS = [
+  {
+    label: 'Hoje',
+    value: 'hoje',
+  },
+  {
+    label: 'Mês',
+    value: 'mes',
+  },
+];
 
 export default function HomeScreen({
   navigation,
@@ -27,35 +41,99 @@ export default function HomeScreen({
   ] = useState(null);
 
   const [
+    jornadas,
+    setJornadas,
+  ] = useState([]);
+
+  const [
+    nomeUsuario,
+    setNomeUsuario,
+  ] = useState('');
+
+  const [
+    filtro,
+    setFiltro,
+  ] = useState('hoje');
+
+  const [
     carregando,
     setCarregando,
   ] = useState(true);
 
+  const [
+    atualizando,
+    setAtualizando,
+  ] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
-      verificarJornadaAtiva();
+      carregarDashboard();
     }, [])
   );
 
-  async function verificarJornadaAtiva() {
+  async function carregarDashboard(
+    atualizacaoManual = false
+  ) {
     try {
-      setCarregando(true);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        navigation.replace('Login');
-        return;
+      if (
+        atualizacaoManual
+      ) {
+        setAtualizando(true);
+      } else {
+        setCarregando(true);
       }
 
       const {
-        data,
-        error,
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (
+        userError ||
+        !user
+      ) {
+        navigation.replace(
+          'Login'
+        );
+
+        return;
+      }
+
+      /*
+       * Busca o nome do usuário.
+       */
+      const {
+        data: usuario,
+        error: erroUsuario,
+      } = await supabase
+        .from('usuarios')
+        .select('nome')
+        .eq('id', user.id)
+        .single();
+
+      if (
+        !erroUsuario &&
+        usuario
+      ) {
+        setNomeUsuario(
+          usuario.nome || ''
+        );
+      }
+
+      /*
+       * Verifica jornada ativa.
+       */
+      const {
+        data: dadosJornadaAtiva,
+        error: erroJornadaAtiva,
       } = await supabase
         .from('jornadas')
-        .select('id, inicio')
+        .select(`
+          id,
+          inicio,
+          km_inicial,
+          veiculo_id
+        `)
         .eq(
           'usuario_id',
           user.id
@@ -64,41 +142,368 @@ export default function HomeScreen({
           'status',
           'em_andamento'
         )
-        .order('inicio', {
-          ascending: false,
-        })
+        .order(
+          'inicio',
+          {
+            ascending: false,
+          }
+        )
         .limit(1);
 
-      if (error) {
-        console.log(
-          'Erro ao verificar jornada:',
-          error
-        );
-
-        return;
-      }
-
       if (
-        data &&
-        data.length > 0
+        erroJornadaAtiva
+      ) {
+        console.log(
+          'Erro ao verificar jornada ativa:',
+          erroJornadaAtiva
+        );
+      } else if (
+        dadosJornadaAtiva &&
+        dadosJornadaAtiva.length > 0
       ) {
         setJornadaAtiva(
-          data[0]
+          dadosJornadaAtiva[0]
         );
       } else {
         setJornadaAtiva(
           null
         );
       }
+
+      /*
+       * Para o Dashboard precisamos
+       * apenas das jornadas do mês atual.
+       *
+       * O filtro "Hoje" é feito depois
+       * sobre esse mesmo conjunto.
+       */
+      const agora =
+        new Date();
+
+      const inicioMes =
+        new Date(
+          agora.getFullYear(),
+          agora.getMonth(),
+          1,
+          0,
+          0,
+          0,
+          0
+        );
+
+      const {
+        data: dadosJornadas,
+        error: erroJornadas,
+      } = await supabase
+        .from('jornadas')
+        .select(`
+          id,
+          inicio,
+          fim,
+          km_inicial,
+          km_final,
+          quantidade_corridas,
+          valor_recebido,
+          status
+        `)
+        .eq(
+          'usuario_id',
+          user.id
+        )
+        .eq(
+          'status',
+          'finalizada'
+        )
+        .gte(
+          'inicio',
+          inicioMes.toISOString()
+        )
+        .order(
+          'inicio',
+          {
+            ascending: false,
+          }
+        );
+
+      if (
+        erroJornadas
+      ) {
+        console.log(
+          'Erro ao carregar dashboard:',
+          erroJornadas
+        );
+
+        Alert.alert(
+          'Erro',
+          'Não foi possível carregar os dados do painel.'
+        );
+
+        return;
+      }
+
+      setJornadas(
+        dadosJornadas || []
+      );
     } catch (erro) {
-      console.log(erro);
+      console.log(
+        'Erro ao carregar dashboard:',
+        erro
+      );
+
+      Alert.alert(
+        'Erro',
+        'Ocorreu um problema ao carregar o painel.'
+      );
     } finally {
       setCarregando(false);
+      setAtualizando(false);
     }
   }
 
+  function inicioDoDia(
+    data
+  ) {
+    const novaData =
+      new Date(data);
+
+    novaData.setHours(
+      0,
+      0,
+      0,
+      0
+    );
+
+    return novaData;
+  }
+
+  /*
+   * Filtra os registros dependendo
+   * da opção Hoje ou Mês.
+   */
+  const jornadasFiltradas =
+    useMemo(() => {
+      if (
+        filtro === 'mes'
+      ) {
+        return jornadas;
+      }
+
+      const hoje =
+        inicioDoDia(
+          new Date()
+        );
+
+      return jornadas.filter(
+        (jornada) => {
+          const dataJornada =
+            inicioDoDia(
+              new Date(
+                jornada.inicio
+              )
+            );
+
+          return (
+            dataJornada.getTime() ===
+            hoje.getTime()
+          );
+        }
+      );
+    }, [
+      jornadas,
+      filtro,
+    ]);
+
+  /*
+   * Calcula todos os indicadores
+   * do painel.
+   */
+  const indicadores =
+    useMemo(() => {
+      return jornadasFiltradas.reduce(
+        (
+          total,
+          jornada
+        ) => {
+          const valor =
+            Number(
+              jornada.valor_recebido ||
+                0
+            );
+
+          const corridas =
+            Number(
+              jornada.quantidade_corridas ||
+                0
+            );
+
+          let km = 0;
+
+          if (
+            jornada.km_final !== null &&
+            jornada.km_final !==
+              undefined
+          ) {
+            km =
+              jornada.km_final -
+              jornada.km_inicial;
+          }
+
+          let segundos = 0;
+
+          if (
+            jornada.inicio &&
+            jornada.fim
+          ) {
+            segundos =
+              Math.max(
+                0,
+                (
+                  new Date(
+                    jornada.fim
+                  ) -
+                  new Date(
+                    jornada.inicio
+                  )
+                ) / 1000
+              );
+          }
+
+          total.valor +=
+            valor;
+
+          total.corridas +=
+            corridas;
+
+          total.km += km;
+
+          total.segundos +=
+            segundos;
+
+          total.jornadas += 1;
+
+          return total;
+        },
+        {
+          valor: 0,
+          corridas: 0,
+          km: 0,
+          segundos: 0,
+          jornadas: 0,
+        }
+      );
+    }, [
+      jornadasFiltradas,
+    ]);
+
+  const horasTrabalhadas =
+    indicadores.segundos /
+    3600;
+
+  const valorHora =
+    horasTrabalhadas > 0
+      ? indicadores.valor /
+        horasTrabalhadas
+      : 0;
+
+  const valorKm =
+    indicadores.km > 0
+      ? indicadores.valor /
+        indicadores.km
+      : 0;
+
+  /*
+   * Última jornada finalizada
+   * dentro do filtro escolhido.
+   */
+  const ultimaJornada =
+    jornadasFiltradas.length > 0
+      ? jornadasFiltradas[0]
+      : null;
+
+  function formatarDinheiro(
+    valor
+  ) {
+    return Number(
+      valor || 0
+    ).toLocaleString(
+      'pt-BR',
+      {
+        style: 'currency',
+        currency: 'BRL',
+      }
+    );
+  }
+
+  function formatarHoras(
+    segundos
+  ) {
+    const segundosTotais =
+      Math.max(
+        0,
+        Math.floor(
+          segundos || 0
+        )
+      );
+
+    const horas =
+      Math.floor(
+        segundosTotais /
+          3600
+      );
+
+    const minutos =
+      Math.floor(
+        (
+          segundosTotais %
+          3600
+        ) / 60
+      );
+
+    if (horas === 0) {
+      return `${minutos}min`;
+    }
+
+    return `${horas}h ${String(
+      minutos
+    ).padStart(2, '0')}min`;
+  }
+
+  function formatarHorario(
+    data
+  ) {
+    if (!data) {
+      return '';
+    }
+
+    return new Date(
+      data
+    ).toLocaleTimeString(
+      'pt-BR',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+      }
+    );
+  }
+
+  function formatarData(
+    data
+  ) {
+    if (!data) {
+      return '';
+    }
+
+    return new Date(
+      data
+    ).toLocaleDateString(
+      'pt-BR'
+    );
+  }
+
   async function sair() {
-    const { error } =
+    const {
+      error,
+    } =
       await supabase.auth.signOut();
 
     if (error) {
@@ -124,69 +529,536 @@ export default function HomeScreen({
             jornadaAtiva.id,
         }
       );
-    } else {
-      navigation.navigate(
-        'IniciarJornada'
-      );
+
+      return;
     }
+
+    navigation.navigate(
+      'IniciarJornada'
+    );
+  }
+
+  if (carregando) {
+    return (
+      <View
+        style={
+          styles.centralizado
+        }
+      >
+        <ActivityIndicator
+          size="large"
+        />
+
+        <Text
+          style={
+            styles.textoCarregando
+          }
+        >
+          Carregando painel...
+        </Text>
+      </View>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.titulo}>
-        App Motorista
-      </Text>
+    <ScrollView
+      style={
+        styles.container
+      }
+      contentContainerStyle={
+        styles.conteudo
+      }
+      showsVerticalScrollIndicator={
+        false
+      }
+      refreshControl={
+        <RefreshControl
+          refreshing={
+            atualizando
+          }
+          onRefresh={() =>
+            carregarDashboard(
+              true
+            )
+          }
+        />
+      }
+    >
+      <View
+        style={
+          styles.cabecalho
+        }
+      >
+        <View>
+          <Text
+            style={
+              styles.titulo
+            }
+          >
+            App Motorista
+          </Text>
 
-      <Text style={styles.subtitulo}>
-        Bem-vindo!
-      </Text>
+          <Text
+            style={
+              styles.saudacao
+            }
+          >
+            {nomeUsuario
+              ? `Olá, ${nomeUsuario}!`
+              : 'Bem-vindo!'}
+          </Text>
+        </View>
 
-      {jornadaAtiva && (
-        <View
+        <TouchableOpacity
           style={
-            styles.avisoJornada
+            styles.botaoSairTopo
+          }
+          onPress={
+            sair
           }
         >
           <Text
             style={
-              styles.avisoJornadaTitulo
+              styles.textoSairTopo
             }
           >
-            Jornada em andamento
+            Sair
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {jornadaAtiva && (
+        <TouchableOpacity
+          style={
+            styles.jornadaAtiva
+          }
+          onPress={
+            abrirJornada
+          }
+        >
+          <View
+            style={
+              styles.jornadaAtivaCabecalho
+            }
+          >
+            <Text
+              style={
+                styles.jornadaAtivaStatus
+              }
+            >
+              ● JORNADA EM ANDAMENTO
+            </Text>
+
+            <Text
+              style={
+                styles.continuar
+              }
+            >
+              Continuar →
+            </Text>
+          </View>
+
+          <Text
+            style={
+              styles.jornadaAtivaTitulo
+            }
+          >
+            Jornada iniciada às{' '}
+            {formatarHorario(
+              jornadaAtiva.inicio
+            )}
           </Text>
 
           <Text
             style={
-              styles.avisoJornadaTexto
+              styles.jornadaAtivaTexto
             }
           >
-            Você possui uma jornada
-            ativa.
+            Toque para acompanhar ou
+            finalizar sua jornada.
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {!jornadaAtiva && (
+        <TouchableOpacity
+          style={
+            styles.botaoIniciar
+          }
+          onPress={
+            abrirJornada
+          }
+        >
+          <Text
+            style={
+              styles.textoBotaoIniciar
+            }
+          >
+            Iniciar jornada
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <View
+        style={
+          styles.tituloLinha
+        }
+      >
+        <View>
+          <Text
+            style={
+              styles.secaoTitulo
+            }
+          >
+            Seu desempenho
+          </Text>
+
+          <Text
+            style={
+              styles.secaoSubtitulo
+            }
+          >
+            Indicadores das jornadas
+            finalizadas
+          </Text>
+        </View>
+      </View>
+
+      <View
+        style={
+          styles.filtros
+        }
+      >
+        {FILTROS.map(
+          (item) => {
+            const selecionado =
+              filtro ===
+              item.value;
+
+            return (
+              <TouchableOpacity
+                key={
+                  item.value
+                }
+                style={[
+                  styles.filtro,
+                  selecionado &&
+                    styles.filtroSelecionado,
+                ]}
+                onPress={() =>
+                  setFiltro(
+                    item.value
+                  )
+                }
+              >
+                <Text
+                  style={[
+                    styles.textoFiltro,
+                    selecionado &&
+                      styles.textoFiltroSelecionado,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          }
+        )}
+      </View>
+
+      <View
+        style={
+          styles.cardDestaque
+        }
+      >
+        <Text
+          style={
+            styles.destaqueLabel
+          }
+        >
+          Total recebido
+        </Text>
+
+        <Text
+          style={
+            styles.destaqueValor
+          }
+        >
+          {formatarDinheiro(
+            indicadores.valor
+          )}
+        </Text>
+
+        <Text
+          style={
+            styles.destaquePeriodo
+          }
+        >
+          {filtro === 'hoje'
+            ? 'Hoje'
+            : 'Neste mês'}
+        </Text>
+      </View>
+
+      <View
+        style={
+          styles.grade
+        }
+      >
+        <View
+          style={
+            styles.cardIndicador
+          }
+        >
+          <Text
+            style={
+              styles.indicadorLabel
+            }
+          >
+            Horas
+          </Text>
+
+          <Text
+            style={
+              styles.indicadorValor
+            }
+          >
+            {formatarHoras(
+              indicadores.segundos
+            )}
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.cardIndicador
+          }
+        >
+          <Text
+            style={
+              styles.indicadorLabel
+            }
+          >
+            Corridas
+          </Text>
+
+          <Text
+            style={
+              styles.indicadorValor
+            }
+          >
+            {
+              indicadores.corridas
+            }
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.cardIndicador
+          }
+        >
+          <Text
+            style={
+              styles.indicadorLabel
+            }
+          >
+            Distância
+          </Text>
+
+          <Text
+            style={
+              styles.indicadorValor
+            }
+          >
+            {
+              indicadores.km
+            } km
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.cardIndicador
+          }
+        >
+          <Text
+            style={
+              styles.indicadorLabel
+            }
+          >
+            Jornadas
+          </Text>
+
+          <Text
+            style={
+              styles.indicadorValor
+            }
+          >
+            {
+              indicadores.jornadas
+            }
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.cardIndicador
+          }
+        >
+          <Text
+            style={
+              styles.indicadorLabel
+            }
+          >
+            R$/hora
+          </Text>
+
+          <Text
+            style={
+              styles.indicadorValor
+            }
+          >
+            {formatarDinheiro(
+              valorHora
+            )}
+          </Text>
+        </View>
+
+        <View
+          style={
+            styles.cardIndicador
+          }
+        >
+          <Text
+            style={
+              styles.indicadorLabel
+            }
+          >
+            R$/km
+          </Text>
+
+          <Text
+            style={
+              styles.indicadorValor
+            }
+          >
+            {formatarDinheiro(
+              valorKm
+            )}
+          </Text>
+        </View>
+      </View>
+
+      {indicadores.jornadas ===
+        0 && (
+        <View
+          style={
+            styles.semDados
+          }
+        >
+          <Text
+            style={
+              styles.semDadosTitulo
+            }
+          >
+            Nenhuma jornada finalizada
+          </Text>
+
+          <Text
+            style={
+              styles.semDadosTexto
+            }
+          >
+            Os indicadores aparecerão
+            aqui após a conclusão de uma
+            jornada neste período.
           </Text>
         </View>
       )}
 
-      <TouchableOpacity
-        style={
-          styles.botaoJornada
-        }
-        onPress={abrirJornada}
-        disabled={carregando}
-      >
-        {carregando ? (
-          <ActivityIndicator />
-        ) : (
+      {ultimaJornada && (
+        <View>
           <Text
             style={
-              styles.textoBotao
+              styles.secaoTitulo
             }
           >
-            {jornadaAtiva
-              ? 'Continuar jornada'
-              : 'Iniciar jornada'}
+            Última jornada
           </Text>
-        )}
-      </TouchableOpacity>
+
+          <TouchableOpacity
+            style={
+              styles.ultimaJornada
+            }
+            onPress={() =>
+              navigation.navigate(
+                'ResumoJornada',
+                {
+                  jornadaId:
+                    ultimaJornada.id,
+                }
+              )
+            }
+          >
+            <View
+              style={
+                styles.ultimaLinha
+              }
+            >
+              <Text
+                style={
+                  styles.ultimaData
+                }
+              >
+                {formatarData(
+                  ultimaJornada.inicio
+                )}
+              </Text>
+
+              <Text
+                style={
+                  styles.ultimaValor
+                }
+              >
+                {formatarDinheiro(
+                  ultimaJornada.valor_recebido
+                )}
+              </Text>
+            </View>
+
+            <Text
+              style={
+                styles.ultimaHorario
+              }
+            >
+              {formatarHorario(
+                ultimaJornada.inicio
+              )}{' '}
+              →{' '}
+              {formatarHorario(
+                ultimaJornada.fim
+              )}
+            </Text>
+
+            <Text
+              style={
+                styles.verDetalhes
+              }
+            >
+              Ver resumo →
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <Text
+        style={
+          styles.secaoTitulo
+        }
+      >
+        Acesso rápido
+      </Text>
 
       <TouchableOpacity
         style={
@@ -198,12 +1070,31 @@ export default function HomeScreen({
           )
         }
       >
+        <View>
+          <Text
+            style={
+              styles.botaoSecundarioTitulo
+            }
+          >
+            Histórico de jornadas
+          </Text>
+
+          <Text
+            style={
+              styles.botaoSecundarioDescricao
+            }
+          >
+            Consulte suas jornadas e
+            períodos anteriores
+          </Text>
+        </View>
+
         <Text
           style={
-            styles.textoSecundario
+            styles.seta
           }
         >
-          Histórico de jornadas
+          →
         </Text>
       </TouchableOpacity>
 
@@ -217,24 +1108,34 @@ export default function HomeScreen({
           )
         }
       >
+        <View>
+          <Text
+            style={
+              styles.botaoSecundarioTitulo
+            }
+          >
+            Meus veículos
+          </Text>
+
+          <Text
+            style={
+              styles.botaoSecundarioDescricao
+            }
+          >
+            Cadastre e gerencie seus
+            veículos
+          </Text>
+        </View>
+
         <Text
           style={
-            styles.textoSecundario
+            styles.seta
           }
         >
-          Meus veículos
+          →
         </Text>
       </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.botaoSair}
-        onPress={sair}
-      >
-        <Text style={styles.textoSair}>
-          Sair
-        </Text>
-      </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -242,82 +1143,313 @@ const styles =
   StyleSheet.create({
     container: {
       flex: 1,
-      justifyContent:
-        'center',
-      padding: 28,
       backgroundColor:
         '#F5F6F8',
     },
 
-    titulo: {
-      fontSize: 32,
-      fontWeight: 'bold',
-      marginBottom: 8,
+    conteudo: {
+      padding: 20,
+      paddingTop: 55,
+      paddingBottom: 45,
     },
 
-    subtitulo: {
-      fontSize: 20,
-      fontWeight: '600',
-      marginBottom: 25,
-    },
-
-    avisoJornada: {
+    centralizado: {
+      flex: 1,
+      justifyContent:
+        'center',
+      alignItems: 'center',
       backgroundColor:
-        '#FFFFFF',
-      borderWidth: 1,
-      borderColor:
-        '#DDDDDD',
-      padding: 15,
-      borderRadius: 10,
-      marginBottom: 15,
+        '#F5F6F8',
     },
 
-    avisoJornadaTitulo: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      marginBottom: 4,
-    },
-
-    avisoJornadaTexto: {
+    textoCarregando: {
+      marginTop: 12,
       fontSize: 14,
     },
 
-    botaoJornada: {
-      backgroundColor:
-        '#222222',
-      padding: 17,
-      borderRadius: 10,
-      alignItems: 'center',
+    cabecalho: {
+      flexDirection: 'row',
+      justifyContent:
+        'space-between',
+      alignItems:
+        'flex-start',
+      marginBottom: 22,
     },
 
-    textoBotao: {
+    titulo: {
+      fontSize: 30,
+      fontWeight: 'bold',
+    },
+
+    saudacao: {
+      fontSize: 16,
+      marginTop: 4,
+    },
+
+    botaoSairTopo: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+
+    textoSairTopo: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+
+    jornadaAtiva: {
+      backgroundColor:
+        '#222222',
+      borderRadius: 14,
+      padding: 18,
+      marginBottom: 22,
+    },
+
+    jornadaAtivaCabecalho: {
+      flexDirection: 'row',
+      justifyContent:
+        'space-between',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+
+    jornadaAtivaStatus: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+
+    continuar: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      fontWeight: '600',
+    },
+
+    jornadaAtivaTitulo: {
+      color: '#FFFFFF',
+      fontSize: 19,
+      fontWeight: 'bold',
+      marginBottom: 5,
+    },
+
+    jornadaAtivaTexto: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      lineHeight: 19,
+    },
+
+    botaoIniciar: {
+      backgroundColor:
+        '#222222',
+      borderRadius: 12,
+      padding: 17,
+      alignItems: 'center',
+      marginBottom: 24,
+    },
+
+    textoBotaoIniciar: {
       color: '#FFFFFF',
       fontSize: 16,
       fontWeight: 'bold',
     },
 
-    botaoSecundario: {
-      marginTop: 12,
-      padding: 16,
-      borderRadius: 10,
+    tituloLinha: {
+      flexDirection: 'row',
+      justifyContent:
+        'space-between',
+      alignItems: 'center',
+    },
+
+    secaoTitulo: {
+      fontSize: 19,
+      fontWeight: 'bold',
+      marginBottom: 5,
+      marginTop: 4,
+    },
+
+    secaoSubtitulo: {
+      fontSize: 13,
+      marginBottom: 14,
+    },
+
+    filtros: {
+      flexDirection: 'row',
+      marginBottom: 14,
+      gap: 8,
+    },
+
+    filtro: {
+      paddingVertical: 9,
+      paddingHorizontal: 20,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor:
         '#CCCCCC',
-      alignItems: 'center',
+      backgroundColor:
+        '#FFFFFF',
     },
 
-    textoSecundario: {
-      fontSize: 16,
+    filtroSelecionado: {
+      backgroundColor:
+        '#222222',
+      borderColor:
+        '#222222',
+    },
+
+    textoFiltro: {
+      fontSize: 13,
       fontWeight: '600',
     },
 
-    botaoSair: {
-      marginTop: 25,
-      padding: 12,
+    textoFiltroSelecionado: {
+      color: '#FFFFFF',
+    },
+
+    cardDestaque: {
+      backgroundColor:
+        '#222222',
+      borderRadius: 14,
+      padding: 20,
+      marginBottom: 12,
+    },
+
+    destaqueLabel: {
+      color: '#FFFFFF',
+      fontSize: 13,
+      marginBottom: 5,
+    },
+
+    destaqueValor: {
+      color: '#FFFFFF',
+      fontSize: 30,
+      fontWeight: 'bold',
+    },
+
+    destaquePeriodo: {
+      color: '#FFFFFF',
+      fontSize: 12,
+      marginTop: 6,
+    },
+
+    grade: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent:
+        'space-between',
+      marginBottom: 10,
+    },
+
+    cardIndicador: {
+      width: '48%',
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#E0E0E0',
+      borderRadius: 12,
+      padding: 15,
+      marginBottom: 11,
+    },
+
+    indicadorLabel: {
+      fontSize: 12,
+      marginBottom: 7,
+    },
+
+    indicadorValor: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+
+    semDados: {
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#E0E0E0',
+      borderRadius: 12,
+      padding: 18,
+      marginBottom: 20,
+    },
+
+    semDadosTitulo: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 5,
+    },
+
+    semDadosTexto: {
+      fontSize: 13,
+      lineHeight: 19,
+    },
+
+    ultimaJornada: {
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#E0E0E0',
+      borderRadius: 12,
+      padding: 16,
+      marginTop: 7,
+      marginBottom: 22,
+    },
+
+    ultimaLinha: {
+      flexDirection: 'row',
+      justifyContent:
+        'space-between',
       alignItems: 'center',
     },
 
-    textoSair: {
-      fontSize: 15,
+    ultimaData: {
+      fontSize: 14,
+      fontWeight: '600',
+    },
+
+    ultimaValor: {
+      fontSize: 18,
+      fontWeight: 'bold',
+    },
+
+    ultimaHorario: {
+      fontSize: 14,
+      marginTop: 8,
+    },
+
+    verDetalhes: {
+      fontSize: 13,
+      fontWeight: '600',
+      marginTop: 12,
+    },
+
+    botaoSecundario: {
+      flexDirection: 'row',
+      justifyContent:
+        'space-between',
+      alignItems: 'center',
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#DDDDDD',
+      borderRadius: 12,
+      padding: 16,
+      marginTop: 10,
+    },
+
+    botaoSecundarioTitulo: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
+
+    botaoSecundarioDescricao: {
+      fontSize: 12,
+      maxWidth: 260,
+    },
+
+    seta: {
+      fontSize: 20,
+      fontWeight: 'bold',
     },
   });

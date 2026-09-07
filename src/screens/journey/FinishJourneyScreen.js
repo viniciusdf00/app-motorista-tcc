@@ -19,25 +19,74 @@ export default function FinishJourneyScreen({
 }) {
   const { jornadaId } = route.params;
 
-  const [jornada, setJornada] = useState(null);
+  const [jornada, setJornada] =
+    useState(null);
 
-  const [kmFinal, setKmFinal] = useState('');
-  const [quantidadeCorridas, setQuantidadeCorridas] =
-    useState('');
-  const [valorRecebido, setValorRecebido] =
-    useState('');
-  const [observacao, setObservacao] =
+  const [kmFinal, setKmFinal] =
     useState('');
 
-  const [carregando, setCarregando] =
-    useState(true);
+  const [
+    quantidadeCorridas,
+    setQuantidadeCorridas,
+  ] = useState('');
 
-  const [salvando, setSalvando] =
-    useState(false);
+  const [
+    valorRecebido,
+    setValorRecebido,
+  ] = useState('');
+
+  const [
+    observacao,
+    setObservacao,
+  ] = useState('');
+
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
+
+  const [
+    salvando,
+    setSalvando,
+  ] = useState(false);
 
   useEffect(() => {
     carregarJornada();
   }, []);
+
+  /*
+   * Depois que a jornada for finalizada,
+   * remove da pilha as telas antigas:
+   *
+   * JornadaAtiva
+   * FinalizarJornada
+   *
+   * E deixa somente:
+   *
+   * Home
+   * ↓
+   * ResumoJornada
+   *
+   * Assim, ao apertar a seta de voltar
+   * no resumo, o usuário retorna
+   * diretamente para a Home.
+   */
+  function abrirResumoAposFinalizar() {
+    navigation.reset({
+      index: 1,
+      routes: [
+        {
+          name: 'Home',
+        },
+        {
+          name: 'ResumoJornada',
+          params: {
+            jornadaId,
+          },
+        },
+      ],
+    });
+  }
 
   async function carregarJornada() {
     try {
@@ -51,7 +100,10 @@ export default function FinishJourneyScreen({
         .select(
           'id, veiculo_id, km_inicial, inicio, status'
         )
-        .eq('id', jornadaId)
+        .eq(
+          'id',
+          jornadaId
+        )
         .single();
 
       if (error) {
@@ -68,13 +120,17 @@ export default function FinishJourneyScreen({
         return;
       }
 
-      if (data.status !== 'em_andamento') {
-        navigation.replace(
-          'ResumoJornada',
-          {
-            jornadaId,
-          }
-        );
+      /*
+       * Caso essa tela seja aberta
+       * para uma jornada que já foi
+       * finalizada, não mostra mais
+       * o formulário.
+       */
+      if (
+        data.status !==
+        'em_andamento'
+      ) {
+        abrirResumoAposFinalizar();
 
         return;
       }
@@ -82,7 +138,9 @@ export default function FinishJourneyScreen({
       setJornada(data);
 
       setKmFinal(
-        String(data.km_inicial)
+        String(
+          data.km_inicial
+        )
       );
     } catch (erro) {
       console.log(erro);
@@ -97,6 +155,9 @@ export default function FinishJourneyScreen({
   }
 
   async function finalizarJornada() {
+    /*
+     * Quilometragem final
+     */
     if (!kmFinal.trim()) {
       Alert.alert(
         'Quilometragem obrigatória',
@@ -106,7 +167,12 @@ export default function FinishJourneyScreen({
       return;
     }
 
-    if (!quantidadeCorridas.trim()) {
+    /*
+     * Quantidade de corridas
+     */
+    if (
+      !quantidadeCorridas.trim()
+    ) {
       Alert.alert(
         'Quantidade obrigatória',
         'Informe a quantidade de corridas realizadas.'
@@ -115,7 +181,12 @@ export default function FinishJourneyScreen({
       return;
     }
 
-    if (!valorRecebido.trim()) {
+    /*
+     * Valor recebido
+     */
+    if (
+      !valorRecebido.trim()
+    ) {
       Alert.alert(
         'Valor obrigatório',
         'Informe o valor recebido durante a jornada.'
@@ -128,15 +199,25 @@ export default function FinishJourneyScreen({
       Number(kmFinal);
 
     const corridasNumero =
-      Number(quantidadeCorridas);
+      Number(
+        quantidadeCorridas
+      );
 
     const valorNumero =
       Number(
-        valorRecebido.replace(',', '.')
+        valorRecebido.replace(
+          ',',
+          '.'
+        )
       );
 
+    /*
+     * Validação da quilometragem.
+     */
     if (
-      !Number.isInteger(kmFinalNumero) ||
+      !Number.isInteger(
+        kmFinalNumero
+      ) ||
       kmFinalNumero <
         jornada.km_inicial
     ) {
@@ -148,8 +229,13 @@ export default function FinishJourneyScreen({
       return;
     }
 
+    /*
+     * Validação das corridas.
+     */
     if (
-      !Number.isInteger(corridasNumero) ||
+      !Number.isInteger(
+        corridasNumero
+      ) ||
       corridasNumero < 0
     ) {
       Alert.alert(
@@ -160,8 +246,13 @@ export default function FinishJourneyScreen({
       return;
     }
 
+    /*
+     * Validação do valor.
+     */
     if (
-      !Number.isFinite(valorNumero) ||
+      !Number.isFinite(
+        valorNumero
+      ) ||
       valorNumero < 0
     ) {
       Alert.alert(
@@ -175,26 +266,40 @@ export default function FinishJourneyScreen({
     try {
       setSalvando(true);
 
-      const fim = new Date().toISOString();
+      const fim =
+        new Date().toISOString();
 
+      /*
+       * Finaliza a jornada.
+       */
       const {
         error: erroJornada,
       } = await supabase
         .from('jornadas')
         .update({
           fim,
-          km_final: kmFinalNumero,
+
+          km_final:
+            kmFinalNumero,
+
           quantidade_corridas:
             corridasNumero,
+
           valor_recebido:
             valorNumero,
+
           observacao:
             observacao.trim()
               ? observacao.trim()
               : null,
-          status: 'finalizada',
+
+          status:
+            'finalizada',
         })
-        .eq('id', jornadaId);
+        .eq(
+          'id',
+          jornadaId
+        );
 
       if (erroJornada) {
         console.log(
@@ -211,8 +316,8 @@ export default function FinishJourneyScreen({
       }
 
       /*
-       * Atualiza a quilometragem atual
-       * do veículo com o km final.
+       * Atualiza a quilometragem
+       * atual do veículo.
        */
       const {
         error: erroVeiculo,
@@ -239,12 +344,17 @@ export default function FinishJourneyScreen({
         );
       }
 
-      navigation.replace(
-        'ResumoJornada',
-        {
-          jornadaId,
-        }
-      );
+      /*
+       * IMPORTANTE:
+       *
+       * Aqui não usamos mais:
+       *
+       * navigation.replace(...)
+       *
+       * Agora limpamos a pilha
+       * das telas da jornada.
+       */
+      abrirResumoAposFinalizar();
     } catch (erro) {
       console.log(erro);
 
@@ -277,12 +387,20 @@ export default function FinishJourneyScreen({
 
   if (carregando) {
     return (
-      <View style={styles.centralizado}>
+      <View
+        style={
+          styles.centralizado
+        }
+      >
         <ActivityIndicator
           size="large"
         />
 
-        <Text style={styles.carregando}>
+        <Text
+          style={
+            styles.carregando
+          }
+        >
           Carregando jornada...
         </Text>
       </View>
@@ -296,66 +414,114 @@ export default function FinishJourneyScreen({
       }
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.titulo}>
+      <Text
+        style={
+          styles.titulo
+        }
+      >
         Finalizar jornada
       </Text>
 
-      <Text style={styles.subtitulo}>
+      <Text
+        style={
+          styles.subtitulo
+        }
+      >
         Informe os dados do encerramento
         do seu período de trabalho.
       </Text>
 
-      <View style={styles.informacao}>
-        <Text style={styles.infoLabel}>
+      <View
+        style={
+          styles.informacao
+        }
+      >
+        <Text
+          style={
+            styles.infoLabel
+          }
+        >
           Quilometragem inicial
         </Text>
 
-        <Text style={styles.infoValor}>
+        <Text
+          style={
+            styles.infoValor
+          }
+        >
           {jornada?.km_inicial} km
         </Text>
       </View>
 
-      <Text style={styles.label}>
+      <Text
+        style={
+          styles.label
+        }
+      >
         Quilometragem final
       </Text>
 
       <TextInput
-        style={styles.input}
+        style={
+          styles.input
+        }
         placeholder="Ex.: 65280"
         keyboardType="numeric"
         value={kmFinal}
-        onChangeText={setKmFinal}
+        onChangeText={
+          setKmFinal
+        }
       />
 
-      <Text style={styles.label}>
+      <Text
+        style={
+          styles.label
+        }
+      >
         Quantidade de corridas
       </Text>
 
       <TextInput
-        style={styles.input}
+        style={
+          styles.input
+        }
         placeholder="Ex.: 12"
         keyboardType="numeric"
-        value={quantidadeCorridas}
+        value={
+          quantidadeCorridas
+        }
         onChangeText={
           setQuantidadeCorridas
         }
       />
 
-      <Text style={styles.label}>
+      <Text
+        style={
+          styles.label
+        }
+      >
         Valor recebido
       </Text>
 
       <TextInput
-        style={styles.input}
+        style={
+          styles.input
+        }
         placeholder="Ex.: 185,50"
         keyboardType="decimal-pad"
-        value={valorRecebido}
+        value={
+          valorRecebido
+        }
         onChangeText={
           setValorRecebido
         }
       />
 
-      <Text style={styles.label}>
+      <Text
+        style={
+          styles.label
+        }
+      >
         Observação
       </Text>
 
@@ -366,8 +532,12 @@ export default function FinishJourneyScreen({
         ]}
         placeholder="Opcional"
         multiline
-        value={observacao}
-        onChangeText={setObservacao}
+        value={
+          observacao
+        }
+        onChangeText={
+          setObservacao
+        }
       />
 
       <TouchableOpacity
@@ -376,7 +546,9 @@ export default function FinishJourneyScreen({
           salvando &&
             styles.botaoDesabilitado,
         ]}
-        disabled={salvando}
+        disabled={
+          salvando
+        }
         onPress={
           confirmarFinalizacao
         }
@@ -395,92 +567,102 @@ export default function FinishJourneyScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: 24,
-    paddingBottom: 40,
-    backgroundColor: '#F5F6F8',
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      padding: 24,
+      paddingBottom: 40,
+      backgroundColor:
+        '#F5F6F8',
+    },
 
-  centralizado: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F6F8',
-  },
+    centralizado: {
+      flex: 1,
+      justifyContent:
+        'center',
+      alignItems: 'center',
+      backgroundColor:
+        '#F5F6F8',
+    },
 
-  carregando: {
-    marginTop: 12,
-  },
+    carregando: {
+      marginTop: 12,
+    },
 
-  titulo: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    marginBottom: 7,
-  },
+    titulo: {
+      fontSize: 30,
+      fontWeight: 'bold',
+      marginBottom: 7,
+    },
 
-  subtitulo: {
-    fontSize: 15,
-    lineHeight: 21,
-    marginBottom: 25,
-  },
+    subtitulo: {
+      fontSize: 15,
+      lineHeight: 21,
+      marginBottom: 25,
+    },
 
-  informacao: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-  },
+    informacao: {
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#DDDDDD',
+      borderRadius: 10,
+      padding: 15,
+      marginBottom: 10,
+    },
 
-  infoLabel: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
+    infoLabel: {
+      fontSize: 13,
+      marginBottom: 4,
+    },
 
-  infoValor: {
-    fontSize: 19,
-    fontWeight: 'bold',
-  },
+    infoValor: {
+      fontSize: 19,
+      fontWeight: 'bold',
+    },
 
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 6,
-  },
+    label: {
+      fontSize: 15,
+      fontWeight: '600',
+      marginTop: 16,
+      marginBottom: 6,
+    },
 
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-  },
+    input: {
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#CCCCCC',
+      borderRadius: 10,
+      padding: 14,
+      fontSize: 16,
+    },
 
-  textArea: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
+    textArea: {
+      minHeight: 100,
+      textAlignVertical:
+        'top',
+    },
 
-  botaoFinalizar: {
-    backgroundColor: '#222222',
-    padding: 17,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 32,
-  },
+    botaoFinalizar: {
+      backgroundColor:
+        '#222222',
+      padding: 17,
+      borderRadius: 10,
+      alignItems: 'center',
+      marginTop: 32,
+    },
 
-  botaoDesabilitado: {
-    opacity: 0.6,
-  },
+    botaoDesabilitado: {
+      opacity: 0.6,
+    },
 
-  textoBotao: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
+    textoBotao: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+  });
