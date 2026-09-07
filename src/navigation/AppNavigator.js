@@ -16,6 +16,10 @@ import FinishJourneyScreen from '../screens/journey/FinishJourneyScreen';
 import JourneySummaryScreen from '../screens/journey/JourneySummaryScreen';
 import JourneyHistoryScreen from '../screens/journey/JourneyHistoryScreen';
 
+import ExpensesScreen from '../screens/expense/ExpensesScreen';
+import ExpenseRegisterScreen from '../screens/expense/ExpenseRegisterScreen';
+import ExpenseEditScreen from '../screens/expense/ExpenseEditScreen';
+
 const Stack =
   createNativeStackNavigator();
 
@@ -53,7 +57,9 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="MeusVeiculos"
-          component={VehiclesScreen}
+          component={
+            VehiclesScreen
+          }
           options={{
             title: 'Meus veículos',
           }}
@@ -61,7 +67,9 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="EditarVeiculo"
-          component={VehicleEditScreen}
+          component={
+            VehicleEditScreen
+          }
           options={{
             title: 'Editar veículo',
           }}
@@ -69,7 +77,9 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="IniciarJornada"
-          component={StartJourneyScreen}
+          component={
+            StartJourneyScreen
+          }
           options={{
             title: 'Iniciar jornada',
           }}
@@ -77,16 +87,21 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="JornadaAtiva"
-          component={ActiveJourneyScreen}
+          component={
+            ActiveJourneyScreen
+          }
           options={{
             title: 'Jornada',
-            headerBackVisible: false,
+            headerBackVisible:
+              false,
           }}
         />
 
         <Stack.Screen
           name="FinalizarJornada"
-          component={FinishJourneyScreen}
+          component={
+            FinishJourneyScreen
+          }
           options={{
             title: 'Finalizar jornada',
           }}
@@ -94,7 +109,9 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="ResumoJornada"
-          component={JourneySummaryScreen}
+          component={
+            JourneySummaryScreen
+          }
           options={{
             title: 'Resumo da jornada',
           }}
@@ -102,9 +119,41 @@ export default function AppNavigator() {
 
         <Stack.Screen
           name="HistoricoJornadas"
-          component={JourneyHistoryScreen}
+          component={
+            JourneyHistoryScreen
+          }
           options={{
             title: 'Histórico',
+          }}
+        />
+
+        <Stack.Screen
+          name="Despesas"
+          component={
+            ExpensesScreen
+          }
+          options={{
+            title: 'Despesas',
+          }}
+        />
+
+        <Stack.Screen
+          name="CadastrarDespesa"
+          component={
+            ExpenseRegisterScreen
+          }
+          options={{
+            title: 'Nova despesa',
+          }}
+        />
+
+        <Stack.Screen
+          name="EditarDespesa"
+          component={
+            ExpenseEditScreen
+          }
+          options={{
+            title: 'Editar despesa',
           }}
         />
 

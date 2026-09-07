@@ -86,7 +86,8 @@ export default function HomeScreen({
       const {
         data: { user },
         error: userError,
-      } = await supabase.auth.getUser();
+      } =
+        await supabase.auth.getUser();
 
       if (
         userError ||
@@ -99,16 +100,16 @@ export default function HomeScreen({
         return;
       }
 
-      /*
-       * Busca o nome do usuário.
-       */
       const {
         data: usuario,
         error: erroUsuario,
       } = await supabase
         .from('usuarios')
         .select('nome')
-        .eq('id', user.id)
+        .eq(
+          'id',
+          user.id
+        )
         .single();
 
       if (
@@ -120,9 +121,6 @@ export default function HomeScreen({
         );
       }
 
-      /*
-       * Verifica jornada ativa.
-       */
       const {
         data: dadosJornadaAtiva,
         error: erroJornadaAtiva,
@@ -159,7 +157,8 @@ export default function HomeScreen({
         );
       } else if (
         dadosJornadaAtiva &&
-        dadosJornadaAtiva.length > 0
+        dadosJornadaAtiva.length >
+          0
       ) {
         setJornadaAtiva(
           dadosJornadaAtiva[0]
@@ -170,13 +169,6 @@ export default function HomeScreen({
         );
       }
 
-      /*
-       * Para o Dashboard precisamos
-       * apenas das jornadas do mês atual.
-       *
-       * O filtro "Hoje" é feito depois
-       * sobre esse mesmo conjunto.
-       */
       const agora =
         new Date();
 
@@ -276,10 +268,6 @@ export default function HomeScreen({
     return novaData;
   }
 
-  /*
-   * Filtra os registros dependendo
-   * da opção Hoje ou Mês.
-   */
   const jornadasFiltradas =
     useMemo(() => {
       if (
@@ -313,10 +301,6 @@ export default function HomeScreen({
       filtro,
     ]);
 
-  /*
-   * Calcula todos os indicadores
-   * do painel.
-   */
   const indicadores =
     useMemo(() => {
       return jornadasFiltradas.reduce(
@@ -339,7 +323,8 @@ export default function HomeScreen({
           let km = 0;
 
           if (
-            jornada.km_final !== null &&
+            jornada.km_final !==
+              null &&
             jornada.km_final !==
               undefined
           ) {
@@ -374,7 +359,8 @@ export default function HomeScreen({
           total.corridas +=
             corridas;
 
-          total.km += km;
+          total.km +=
+            km;
 
           total.segundos +=
             segundos;
@@ -411,12 +397,9 @@ export default function HomeScreen({
         indicadores.km
       : 0;
 
-  /*
-   * Última jornada finalizada
-   * dentro do filtro escolhido.
-   */
   const ultimaJornada =
-    jornadasFiltradas.length > 0
+    jornadasFiltradas.length >
+    0
       ? jornadasFiltradas[0]
       : null;
 
@@ -459,13 +442,18 @@ export default function HomeScreen({
         ) / 60
       );
 
-    if (horas === 0) {
+    if (
+      horas === 0
+    ) {
       return `${minutos}min`;
     }
 
     return `${horas}h ${String(
       minutos
-    ).padStart(2, '0')}min`;
+    ).padStart(
+      2,
+      '0'
+    )}min`;
   }
 
   function formatarHorario(
@@ -521,7 +509,9 @@ export default function HomeScreen({
   }
 
   function abrirJornada() {
-    if (jornadaAtiva) {
+    if (
+      jornadaAtiva
+    ) {
       navigation.navigate(
         'JornadaAtiva',
         {
@@ -538,7 +528,9 @@ export default function HomeScreen({
     );
   }
 
-  if (carregando) {
+  if (
+    carregando
+  ) {
     return (
       <View
         style={
@@ -613,9 +605,7 @@ export default function HomeScreen({
           style={
             styles.botaoSairTopo
           }
-          onPress={
-            sair
-          }
+          onPress={sair}
         >
           <Text
             style={
@@ -1086,6 +1076,44 @@ export default function HomeScreen({
           >
             Consulte suas jornadas e
             períodos anteriores
+          </Text>
+        </View>
+
+        <Text
+          style={
+            styles.seta
+          }
+        >
+          →
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={
+          styles.botaoSecundario
+        }
+        onPress={() =>
+          navigation.navigate(
+            'Despesas'
+          )
+        }
+      >
+        <View>
+          <Text
+            style={
+              styles.botaoSecundarioTitulo
+            }
+          >
+            Despesas
+          </Text>
+
+          <Text
+            style={
+              styles.botaoSecundarioDescricao
+            }
+          >
+            Registre e acompanhe seus
+            gastos
           </Text>
         </View>
 
