@@ -1,4 +1,5 @@
 import { useState } from 'react';
+
 import {
   View,
   Text,
@@ -53,12 +54,41 @@ export default function LoginScreen({ navigation }) {
         return;
       }
 
-      console.log('Usuário autenticado:', data.user.id);
+      const usuarioId = data.user.id;
 
-      Alert.alert(
-        'Login realizado',
-        'Você entrou no aplicativo com sucesso.'
+      console.log(
+        'Usuário autenticado:',
+        usuarioId
       );
+
+      const {
+        data: veiculos,
+        error: erroVeiculos,
+      } = await supabase
+        .from('veiculos')
+        .select('id')
+        .eq('usuario_id', usuarioId)
+        .eq('ativo', true)
+        .limit(1);
+
+      if (erroVeiculos) {
+        console.log(
+          'Erro ao consultar veículos:',
+          erroVeiculos
+        );
+
+        Alert.alert(
+          'Erro',
+          'Não foi possível consultar seus veículos.'
+        );
+        return;
+      }
+
+      if (veiculos && veiculos.length > 0) {
+        navigation.replace('Home');
+      } else {
+        navigation.replace('CadastroVeiculo');
+      }
     } catch (erro) {
       console.log(erro);
 
@@ -73,13 +103,17 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>App Motorista</Text>
+      <Text style={styles.titulo}>
+        App Motorista
+      </Text>
 
       <Text style={styles.subtitulo}>
         Acompanhe sua rotina de trabalho
       </Text>
 
-      <Text style={styles.label}>E-mail</Text>
+      <Text style={styles.label}>
+        E-mail
+      </Text>
 
       <TextInput
         style={styles.input}
@@ -90,7 +124,9 @@ export default function LoginScreen({ navigation }) {
         onChangeText={setEmail}
       />
 
-      <Text style={styles.label}>Senha</Text>
+      <Text style={styles.label}>
+        Senha
+      </Text>
 
       <TextInput
         style={styles.input}
@@ -103,18 +139,23 @@ export default function LoginScreen({ navigation }) {
       <TouchableOpacity
         style={[
           styles.botao,
-          carregando && styles.botaoDesabilitado,
+          carregando &&
+            styles.botaoDesabilitado,
         ]}
         onPress={efetuarLogin}
         disabled={carregando}
       >
         <Text style={styles.textoBotao}>
-          {carregando ? 'Entrando...' : 'Entrar'}
+          {carregando
+            ? 'Entrando...'
+            : 'Entrar'}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={() => navigation.navigate('Cadastro')}
+        onPress={() =>
+          navigation.navigate('Cadastro')
+        }
       >
         <Text style={styles.link}>
           Ainda não possui uma conta? Cadastre-se
