@@ -3,7 +3,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+
 import VehicleRegisterScreen from '../screens/vehicle/VehicleRegisterScreen';
+import VehiclesScreen from '../screens/vehicle/VehiclesScreen';
+import VehicleEditScreen from '../screens/vehicle/VehicleEditScreen';
+
 import HomeScreen from '../screens/home/HomeScreen';
 
 const Stack = createNativeStackNavigator();
@@ -11,7 +15,9 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator
+        initialRouteName="Login"
+      >
         <Stack.Screen
           name="Login"
           component={LoginScreen}
@@ -32,8 +38,23 @@ export default function AppNavigator() {
           name="CadastroVeiculo"
           component={VehicleRegisterScreen}
           options={{
-            title: 'Meu veículo',
-            headerBackVisible: false,
+            title: 'Cadastrar veículo',
+          }}
+        />
+
+        <Stack.Screen
+          name="MeusVeiculos"
+          component={VehiclesScreen}
+          options={{
+            title: 'Meus veículos',
+          }}
+        />
+
+        <Stack.Screen
+          name="EditarVeiculo"
+          component={VehicleEditScreen}
+          options={{
+            title: 'Editar veículo',
           }}
         />
 

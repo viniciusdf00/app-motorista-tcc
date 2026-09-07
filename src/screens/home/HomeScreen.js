@@ -8,15 +8,19 @@ import {
 
 import { supabase } from '../../services/supabase';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({
+  navigation,
+}) {
   async function sair() {
-    const { error } = await supabase.auth.signOut();
+    const { error } =
+      await supabase.auth.signOut();
 
     if (error) {
       Alert.alert(
         'Erro',
         'Não foi possível sair do aplicativo.'
       );
+
       return;
     }
 
@@ -30,18 +34,31 @@ export default function HomeScreen({ navigation }) {
       </Text>
 
       <Text style={styles.subtitulo}>
-        Veículo cadastrado com sucesso.
+        Bem-vindo!
       </Text>
 
       <Text style={styles.texto}>
-        Nossa Home será construída aqui.
+        Estamos construindo sua área de acompanhamento.
       </Text>
 
       <TouchableOpacity
-        style={styles.botao}
-        onPress={sair}
+        style={styles.botaoPrincipal}
+        onPress={() =>
+          navigation.navigate(
+            'MeusVeiculos'
+          )
+        }
       >
         <Text style={styles.textoBotao}>
+          Meus veículos
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.botaoSair}
+        onPress={sair}
+      >
+        <Text style={styles.textoSair}>
           Sair
         </Text>
       </TouchableOpacity>
@@ -64,25 +81,40 @@ const styles = StyleSheet.create({
   },
 
   subtitulo: {
-    fontSize: 18,
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 10,
   },
 
   texto: {
     fontSize: 15,
+    marginBottom: 28,
   },
 
-  botao: {
+  botaoPrincipal: {
     backgroundColor: '#222222',
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 30,
   },
 
   textoBotao: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+
+  botaoSair: {
+    marginTop: 14,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#CCCCCC',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+
+  textoSair: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

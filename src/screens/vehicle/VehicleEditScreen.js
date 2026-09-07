@@ -21,16 +21,50 @@ const TIPOS_COMBUSTIVEL = [
   { label: 'Híbrido', value: 'hibrido' },
 ];
 
-export default function VehicleRegisterScreen({ navigation }) {
-  const [marca, setMarca] = useState('');
-  const [modelo, setModelo] = useState('');
-  const [ano, setAno] = useState('');
-  const [placa, setPlaca] = useState('');
-  const [tipoCombustivel, setTipoCombustivel] = useState('');
-  const [quilometragem, setQuilometragem] = useState('');
-  const [carregando, setCarregando] = useState(false);
+export default function VehicleEditScreen({
+  route,
+  navigation,
+}) {
+  const { veiculo } = route.params;
 
-  async function salvarVeiculo() {
+  const [marca, setMarca] =
+    useState(veiculo.marca || '');
+
+  const [modelo, setModelo] =
+    useState(veiculo.modelo || '');
+
+  const [ano, setAno] =
+    useState(
+      veiculo.ano
+        ? String(veiculo.ano)
+        : ''
+    );
+
+  const [placa, setPlaca] =
+    useState(veiculo.placa || '');
+
+  const [
+    tipoCombustivel,
+    setTipoCombustivel,
+  ] = useState(
+    veiculo.tipo_combustivel || ''
+  );
+
+  const [
+    quilometragem,
+    setQuilometragem,
+  ] = useState(
+    veiculo.quilometragem_atual !== null
+      ? String(
+          veiculo.quilometragem_atual
+        )
+      : ''
+  );
+
+  const [carregando, setCarregando] =
+    useState(false);
+
+  async function salvarAlteracoes() {
     if (
       !marca.trim() ||
       !modelo.trim() ||
@@ -40,7 +74,7 @@ export default function VehicleRegisterScreen({ navigation }) {
     ) {
       Alert.alert(
         'Campos obrigatórios',
-        'Preencha marca, modelo, ano, combustível e quilometragem.'
+        'Preencha os campos obrigatórios.'
       );
 
       return;
@@ -56,7 +90,7 @@ export default function VehicleRegisterScreen({ navigation }) {
     ) {
       Alert.alert(
         'Ano inválido',
-        'Informe um ano válido para o veículo.'
+        'Informe um ano válido.'
       );
 
       return;
@@ -77,64 +111,44 @@ export default function VehicleRegisterScreen({ navigation }) {
     try {
       setCarregando(true);
 
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        Alert.alert(
-          'Sessão inválida',
-          'Faça login novamente para continuar.'
-        );
-
-        navigation.replace('Login');
-
-        return;
-      }
-
       const { error } = await supabase
         .from('veiculos')
-        .insert({
-          usuario_id: user.id,
+        .update({
           marca: marca.trim(),
           modelo: modelo.trim(),
           ano: anoNumero,
           placa: placa.trim()
             ? placa.trim().toUpperCase()
             : null,
-          tipo_combustivel: tipoCombustivel,
-          quilometragem_atual: kmNumero,
-          ativo: true,
-        });
+          tipo_combustivel:
+            tipoCombustivel,
+          quilometragem_atual:
+            kmNumero,
+        })
+        .eq('id', veiculo.id);
 
       if (error) {
         console.log(
-          'Erro ao cadastrar veículo:',
+          'Erro ao atualizar veículo:',
           error
         );
 
         Alert.alert(
-          'Erro ao cadastrar veículo',
-          error.message
+          'Erro',
+          'Não foi possível atualizar o veículo.'
         );
 
         return;
       }
 
       Alert.alert(
-        'Veículo cadastrado!',
-        'Seu veículo foi salvo com sucesso.',
+        'Veículo atualizado!',
+        'As informações foram salvas.',
         [
           {
-            text: 'Continuar',
-            onPress: () => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.replace('Home');
-              }
-            },
+            text: 'OK',
+            onPress: () =>
+              navigation.goBack(),
           },
         ]
       );
@@ -143,7 +157,7 @@ export default function VehicleRegisterScreen({ navigation }) {
 
       Alert.alert(
         'Erro',
-        'Ocorreu um problema ao salvar o veículo.'
+        'Ocorreu um problema ao atualizar o veículo.'
       );
     } finally {
       setCarregando(false);
@@ -156,12 +170,7 @@ export default function VehicleRegisterScreen({ navigation }) {
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.titulo}>
-        Cadastre seu veículo
-      </Text>
-
-      <Text style={styles.subtitulo}>
-        Essas informações serão usadas para acompanhar suas jornadas,
-        abastecimentos e manutenções.
+        Editar veículo
       </Text>
 
       <Text style={styles.label}>
@@ -170,7 +179,6 @@ export default function VehicleRegisterScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Ex.: Renault"
         value={marca}
         onChangeText={setMarca}
       />
@@ -181,7 +189,6 @@ export default function VehicleRegisterScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Ex.: Kwid"
         value={modelo}
         onChangeText={setModelo}
       />
@@ -192,7 +199,6 @@ export default function VehicleRegisterScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Ex.: 2022"
         keyboardType="numeric"
         value={ano}
         onChangeText={setAno}
@@ -205,7 +211,6 @@ export default function VehicleRegisterScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Ex.: ABC1D23"
         autoCapitalize="characters"
         value={placa}
         onChangeText={setPlaca}
@@ -217,29 +222,37 @@ export default function VehicleRegisterScreen({ navigation }) {
       </Text>
 
       <View style={styles.combustiveis}>
-        {TIPOS_COMBUSTIVEL.map((combustivel) => (
-          <TouchableOpacity
-            key={combustivel.value}
-            style={[
-              styles.botaoCombustivel,
-              tipoCombustivel === combustivel.value &&
-                styles.botaoCombustivelSelecionado,
-            ]}
-            onPress={() =>
-              setTipoCombustivel(combustivel.value)
-            }
-          >
-            <Text
+        {TIPOS_COMBUSTIVEL.map(
+          (combustivel) => (
+            <TouchableOpacity
+              key={combustivel.value}
               style={[
-                styles.textoCombustivel,
-                tipoCombustivel === combustivel.value &&
-                  styles.textoCombustivelSelecionado,
+                styles.botaoCombustivel,
+
+                tipoCombustivel ===
+                  combustivel.value &&
+                  styles.botaoCombustivelSelecionado,
               ]}
+              onPress={() =>
+                setTipoCombustivel(
+                  combustivel.value
+                )
+              }
             >
-              {combustivel.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.textoCombustivel,
+
+                  tipoCombustivel ===
+                    combustivel.value &&
+                    styles.textoCombustivelSelecionado,
+                ]}
+              >
+                {combustivel.label}
+              </Text>
+            </TouchableOpacity>
+          )
+        )}
       </View>
 
       <Text style={styles.label}>
@@ -248,7 +261,6 @@ export default function VehicleRegisterScreen({ navigation }) {
 
       <TextInput
         style={styles.input}
-        placeholder="Ex.: 65000"
         keyboardType="numeric"
         value={quilometragem}
         onChangeText={setQuilometragem}
@@ -257,15 +269,16 @@ export default function VehicleRegisterScreen({ navigation }) {
       <TouchableOpacity
         style={[
           styles.botaoSalvar,
-          carregando && styles.botaoDesabilitado,
+          carregando &&
+            styles.botaoDesabilitado,
         ]}
-        onPress={salvarVeiculo}
         disabled={carregando}
+        onPress={salvarAlteracoes}
       >
-        <Text style={styles.textoBotaoSalvar}>
+        <Text style={styles.textoBotao}>
           {carregando
             ? 'Salvando...'
-            : 'Salvar veículo'}
+            : 'Salvar alterações'}
         </Text>
       </TouchableOpacity>
     </ScrollView>
@@ -276,21 +289,14 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 28,
-    paddingTop: 50,
     paddingBottom: 40,
     backgroundColor: '#F5F6F8',
   },
 
   titulo: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: 'bold',
-    marginBottom: 8,
-  },
-
-  subtitulo: {
-    fontSize: 15,
-    lineHeight: 21,
-    marginBottom: 22,
+    marginBottom: 14,
   },
 
   label: {
@@ -343,14 +349,14 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     alignItems: 'center',
-    marginTop: 32,
+    marginTop: 30,
   },
 
   botaoDesabilitado: {
     opacity: 0.6,
   },
 
-  textoBotaoSalvar: {
+  textoBotao: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
