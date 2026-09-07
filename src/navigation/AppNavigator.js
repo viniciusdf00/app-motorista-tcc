@@ -14,6 +14,7 @@ import StartJourneyScreen from '../screens/journey/StartJourneyScreen';
 import ActiveJourneyScreen from '../screens/journey/ActiveJourneyScreen';
 import FinishJourneyScreen from '../screens/journey/FinishJourneyScreen';
 import JourneySummaryScreen from '../screens/journey/JourneySummaryScreen';
+import JourneyHistoryScreen from '../screens/journey/JourneyHistoryScreen';
 
 const Stack =
   createNativeStackNavigator();
@@ -96,7 +97,14 @@ export default function AppNavigator() {
           component={JourneySummaryScreen}
           options={{
             title: 'Resumo da jornada',
-            headerBackVisible: false,
+          }}
+        />
+
+        <Stack.Screen
+          name="HistoricoJornadas"
+          component={JourneyHistoryScreen}
+          options={{
+            title: 'Histórico',
           }}
         />
 

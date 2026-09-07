@@ -56,7 +56,10 @@ export default function HomeScreen({
       } = await supabase
         .from('jornadas')
         .select('id, inicio')
-        .eq('usuario_id', user.id)
+        .eq(
+          'usuario_id',
+          user.id
+        )
         .eq(
           'status',
           'em_andamento'
@@ -79,9 +82,13 @@ export default function HomeScreen({
         data &&
         data.length > 0
       ) {
-        setJornadaAtiva(data[0]);
+        setJornadaAtiva(
+          data[0]
+        );
       } else {
-        setJornadaAtiva(null);
+        setJornadaAtiva(
+          null
+        );
       }
     } catch (erro) {
       console.log(erro);
@@ -103,7 +110,9 @@ export default function HomeScreen({
       return;
     }
 
-    navigation.replace('Login');
+    navigation.replace(
+      'Login'
+    );
   }
 
   function abrirJornada() {
@@ -133,7 +142,11 @@ export default function HomeScreen({
       </Text>
 
       {jornadaAtiva && (
-        <View style={styles.avisoJornada}>
+        <View
+          style={
+            styles.avisoJornada
+          }
+        >
           <Text
             style={
               styles.avisoJornadaTitulo
@@ -154,7 +167,9 @@ export default function HomeScreen({
       )}
 
       <TouchableOpacity
-        style={styles.botaoJornada}
+        style={
+          styles.botaoJornada
+        }
         onPress={abrirJornada}
         disabled={carregando}
       >
@@ -162,7 +177,9 @@ export default function HomeScreen({
           <ActivityIndicator />
         ) : (
           <Text
-            style={styles.textoBotao}
+            style={
+              styles.textoBotao
+            }
           >
             {jornadaAtiva
               ? 'Continuar jornada'
@@ -172,7 +189,28 @@ export default function HomeScreen({
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.botaoSecundario}
+        style={
+          styles.botaoSecundario
+        }
+        onPress={() =>
+          navigation.navigate(
+            'HistoricoJornadas'
+          )
+        }
+      >
+        <Text
+          style={
+            styles.textoSecundario
+          }
+        >
+          Histórico de jornadas
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={
+          styles.botaoSecundario
+        }
         onPress={() =>
           navigation.navigate(
             'MeusVeiculos'
@@ -200,79 +238,86 @@ export default function HomeScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 28,
-    backgroundColor: '#F5F6F8',
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent:
+        'center',
+      padding: 28,
+      backgroundColor:
+        '#F5F6F8',
+    },
 
-  titulo: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
+    titulo: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
 
-  subtitulo: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 25,
-  },
+    subtitulo: {
+      fontSize: 20,
+      fontWeight: '600',
+      marginBottom: 25,
+    },
 
-  avisoJornada: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
+    avisoJornada: {
+      backgroundColor:
+        '#FFFFFF',
+      borderWidth: 1,
+      borderColor:
+        '#DDDDDD',
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 15,
+    },
 
-  avisoJornadaTitulo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
+    avisoJornadaTitulo: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginBottom: 4,
+    },
 
-  avisoJornadaTexto: {
-    fontSize: 14,
-  },
+    avisoJornadaTexto: {
+      fontSize: 14,
+    },
 
-  botaoJornada: {
-    backgroundColor: '#222222',
-    padding: 17,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
+    botaoJornada: {
+      backgroundColor:
+        '#222222',
+      padding: 17,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
 
-  textoBotao: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+    textoBotao: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
 
-  botaoSecundario: {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#CCCCCC',
-    alignItems: 'center',
-  },
+    botaoSecundario: {
+      marginTop: 12,
+      padding: 16,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor:
+        '#CCCCCC',
+      alignItems: 'center',
+    },
 
-  textoSecundario: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+    textoSecundario: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
 
-  botaoSair: {
-    marginTop: 25,
-    padding: 12,
-    alignItems: 'center',
-  },
+    botaoSair: {
+      marginTop: 25,
+      padding: 12,
+      alignItems: 'center',
+    },
 
-  textoSair: {
-    fontSize: 15,
-  },
-});
+    textoSair: {
+      fontSize: 15,
+    },
+  });
