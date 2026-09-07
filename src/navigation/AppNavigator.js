@@ -10,6 +10,9 @@ import VehicleEditScreen from '../screens/vehicle/VehicleEditScreen';
 
 import HomeScreen from '../screens/home/HomeScreen';
 
+import StartJourneyScreen from '../screens/journey/StartJourneyScreen';
+import ActiveJourneyScreen from '../screens/journey/ActiveJourneyScreen';
+
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
@@ -55,6 +58,23 @@ export default function AppNavigator() {
           component={VehicleEditScreen}
           options={{
             title: 'Editar veículo',
+          }}
+        />
+
+        <Stack.Screen
+          name="IniciarJornada"
+          component={StartJourneyScreen}
+          options={{
+            title: 'Iniciar jornada',
+          }}
+        />
+
+        <Stack.Screen
+          name="JornadaAtiva"
+          component={ActiveJourneyScreen}
+          options={{
+            title: 'Jornada',
+            headerBackVisible: false,
           }}
         />
 
